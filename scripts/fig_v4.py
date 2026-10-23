@@ -19,23 +19,23 @@ def tidy(ax):
 # ---------------------------------------------------------------- Fig. 2: diagnosis (phase drift + spectral peaks)
 Z = np.load("results/spectrum_zoom.npz")
 fig = plt.figure(figsize=(3.35, 1.3))
-gs = fig.add_gridspec(1, 4, width_ratios=[1.35, 1, 1, 1], wspace=0.1)
+gs = fig.add_gridspec(1, 3, width_ratios=[1.35, 1, 1], wspace=0.1)
 ax = fig.add_subplot(gs[0])
 x = np.arange(0, 513)
 ax.plot(x, np.zeros_like(x), color=BASE, lw=1.4)
 ax.plot(x, (x - x * 508 / 512), color=V4, lw=1.4)
 ax.text(10, 0.35, "train / dev", fontsize=6.3, color=BASE)
-ax.text(20, 3.2, "test\n" + r"($\times$512/508)", fontsize=6.3, color=V4, va="bottom")
-ax.set(xlabel="column $x$ (px)", ylabel="lattice offset (px)", xlim=(0, 512), ylim=(-0.3, 4.6), xticks=[0, 256, 512], yticks=[0, 2, 4])
+ax.text(20, 3.2, "test", fontsize=6.3, color=V4, va="bottom")
+ax.set(xlabel="column $x$ (px)", ylabel="grid offset (px)", xlim=(0, 512), ylim=(-0.3, 4.6), xticks=[0, 256, 512], yticks=[0, 2, 4])
 tidy(ax); ax.set_title("(a)", loc="left", fontsize=7.5)
 W = 7  # half window (bins)
-for i, (k, t) in enumerate([("train_B", "(b) train B"), ("sim_B", "(c) simulated"), ("test", "(d) test")]):
+for i, (k, t) in enumerate([("train_B", "(b) train B"), ("test", "(c) test")]):
     ax = fig.add_subplot(gs[i + 1]); im = np.log(Z[k + "_p4"])[14 - W:14 + W + 1, 14 - W:14 + W + 1]
     ax.imshow(im, cmap="magma", vmin=im.min(), vmax=im.max(), interpolation="nearest", extent=(128 - W - .5, 128 + W + .5, 128 + W + .5, 128 - W - .5))
     ax.axhline(128, color="w", lw=0.4, ls=":"); ax.axvline(128, color="w", lw=0.4, ls=":")
     ax.set_xticks([122, 128, 134]); ax.tick_params(labelsize=5.5, length=2)
     ax.set_yticks([]); ax.set_title(t, fontsize=6.5, loc="left", pad=2)
-    if i == 1: ax.set_xlabel("spectrum bin", fontsize=6.5, labelpad=1)
+    ax.set_xlabel("spectrum bin", fontsize=6.5, labelpad=1)
 plt.savefig("fig/diagnosis.pdf", bbox_inches="tight", pad_inches=0.01); plt.close()
 
 # ---------------------------------------------------------------- Fig. 3: probes baseline vs v4
@@ -48,7 +48,7 @@ a1.axhline(100 / 3, color=MUTED, lw=0.7, ls="--"); a1.text(4, 36.5, "chance", fo
 a1.set(xlabel="diagonal crop shift $d$ (px)", ylabel="val. accuracy (%)", xticks=d, ylim=(25, 104))
 a1.legend(frameon=False, fontsize=6.3, loc="center", bbox_to_anchor=(0.5, 0.6)); tidy(a1)
 a1.set_title("(a) grid phase", loc="left", fontsize=7.5)
-keys = [("simulated test", "simulated test"), ("hflip", "h-flip"), ("rot90", "rot 90°"), ("rescale 0.9", "rescale 0.9"),
+keys = [("hflip", "h-flip"), ("rot90", "rot 90°"), ("rescale 0.9", "rescale 0.9"),
         ("rescale 1.1", "rescale 1.1"), ("jpeg q75", "JPEG q75"), ("jpeg q50", "JPEG q50"), ("resize 256", "resize 256"),
         ("noise 5", r"noise $\sigma$=5"), ("blur 1", r"blur $\sigma$=1")]
 yy = np.arange(len(keys))[::-1]
@@ -64,8 +64,7 @@ plt.savefig("fig/probes.pdf", bbox_inches="tight", pad_inches=0.01); plt.close()
 H = json.load(open("../results/v4_aug_scratch.json"))["history"]
 e = [h["epoch"] for h in H]
 fig, ax = plt.subplots(figsize=(3.35, 1.35))
-for k, col, lab, ls in (("train_acc", MUTED, "train (augmented crops)", "-"), ("harsh_acc", V4, "harsh val (selection)", "-"),
-                        ("sim_acc", "#1baf7a", "simulated-test val", "-")):
+for k, col, lab, ls in (("train_acc", MUTED, "train (augmented crops)", "-"), ("harsh_acc", V4, "harsh val (selection)", "-")):
     ax.plot(e, [100 * h[k] for h in H], color=col, lw=1.3, ls=ls, label=lab)
 best = max(H, key=lambda h: h["harsh_acc"]); ax.plot(best["epoch"], 100 * best["harsh_acc"], "o", ms=4, mfc="none", mec=INK, mew=0.8)
 ax.annotate("saved (ep. 26)", (best["epoch"], 100 * best["harsh_acc"]), (19.5, 80), fontsize=6.3, color=INK,

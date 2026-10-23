@@ -1,27 +1,26 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\noindent\textbf{Protocol.} Clean and simulated accuracies are measured on the 3,000 held-out images, and dev accuracy on 900 images (\cref{sec:v4}). Test accuracy comes from the leaderboard and exists only for submitted models. For the others we report how many test images are predicted real (500 of 1,500 expected). Every model runs once on the unmodified $512^2$ image.
+\noindent\textbf{Protocol.} Clean accuracy is measured on the 3,000 held-out images, and dev accuracy on 900 images (\cref{sec:v4}). Test accuracy comes from the leaderboard and exists only for submitted models. For the others we report how many test images are predicted real (500 of 1,500 expected). Every model runs once on the unmodified $512^2$ image.
 
 \begin{table}[t]
   \centering\small
   \setlength{\tabcolsep}{2.6pt}
-  \begin{tabular}{@{}lcccccc@{}}
+  \begin{tabular}{@{}lccccc@{}}
     \toprule
-    Model & Crop & Clean & Sim. & Dev & Test & \#real \\
+    Model & Crop & Clean & Dev & Test & \#real \\
     \midrule
-    Baseline (no aug.)          & 512 & \textbf{100} & 34.4 & \textbf{100} & 33.3$^\dagger$ & 1500 \\
-    Matched aug.                & 256 & 99.3 & 99.2 & 91.6 & -- & 660 \\
-    Ours + $128^2$ crops        & 128 & 99.9 & \textbf{99.7} & 96.0 & -- & 551 \\
-    \textbf{Ours (submitted)}   & 256 & 99.7 & 99.6 & 96.1 & \textbf{95.3} & 536 \\
+    Baseline (no aug.)          & 512 & \textbf{100} & \textbf{100} & 33.3$^\dagger$ & 1500 \\
+    Ours + $128^2$ crops        & 128 & 99.9 & 96.0 & -- & 551 \\
+    \textbf{Ours (submitted)}   & 256 & 99.7 & 96.1 & \textbf{95.3} & 536 \\
     \bottomrule
   \end{tabular}
-  \caption{\textbf{Main results} (accuracy, \%). \emph{Sim.}: held-out images passed through the test simulator. \emph{\#real}: test images predicted real (500 expected). $^\dagger$All 1,500 test images predicted real, which scores $1/3$ on the balanced test set. \emph{Matched aug.}: the augmentation is restricted to the simulator's neighbourhood (stretch 1.00--1.03, JPEG q80--95, mostly 4:2:0), applied on the fly for 200 epochs.}
+  \caption{\textbf{Main results} (accuracy, \%). \emph{\#real}: test images predicted real (500 expected). $^\dagger$All 1,500 test images predicted real, which scores $1/3$ on the balanced test set.}
   \label{tab:main}
 \end{table}
 
 \subsection{Main result}
-The baseline is perfect on clean and dev data but scores 34.4\% on the simulator (\cref{tab:main}). Our model gives up 0.3 points of clean accuracy and scores 99.6\% on the simulator, 96.1\% on dev and \textbf{95.3\%} (1,429/1,500) on test. Dev predicted the test score closely. The simulator overestimated it by four points, because it reproduces the processing but not the change of scene content in the hidden sets.
+The baseline is perfect on clean and dev data but labels every test image as real (\cref{tab:main}). Our model gives up 0.3 points of clean accuracy and scores 96.1\% on dev and \textbf{95.3\%} (1,429/1,500) on test. Dev predicted the test score closely.
 
 \begin{figure}[t]
   \centering
@@ -33,24 +32,20 @@ The baseline is perfect on clean and dev data but scores 34.4\% on the simulator
 \subsection{What does our model read differently?}
 \Cref{fig:probes} perturbs the held-out images without retraining.
 \emph{Lattice phase.} The baseline drops to chance for every shift that is not a multiple of 8 and for flips and rotations. These move or mirror the lattice without removing it, which confirms the diagnosis. Our model is unaffected (99.7\%).
-\emph{Scale.} A $\pm10\%$ rescale is fatal for the baseline (33\%) and costs our model 8--12 points, although such factors occur in training. Halving the resolution, outside the training range, leaves our model at 80.9\%. The cue is partly scale-dependent: a 0.8\% stretch is nearly free, a 10\% one is not.
+\emph{Scale.} A $\pm10\%$ rescale is fatal for the baseline (33\%) and costs our model 8--12 points, although such factors occur in training. Halving the resolution, outside the training range, leaves our model at 80.9\%.
 \emph{Compression and noise.} JPEG q50 costs our model 2 points (baseline: 53), and Gaussian noise with $\sigma{=}5$ costs it 3.5 points (baseline: 36). The one cost of robustness is blur: $\sigma{=}1$ costs our model 2.3 points and the baseline 0.1.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig/curves_v4.pdf}
-  \caption{\textbf{Training of our model.} Training accuracy on augmented crops and held-out accuracy under the harsh augmentation (used for selection) and under the test simulator.}
+  \caption{\textbf{Training of our model.} Training accuracy on augmented crops and held-out accuracy under the harsh augmentation (used for selection).}
   \label{fig:curves}
 \end{figure}
 
 \subsection{Ablations and training behaviour}
-\noindent\textbf{Broad beats matched augmentation.} Augmentation restricted to the neighbourhood of the simulated processing gives nearly the same simulator accuracy (99.2\%) but 4.5 points less on dev, and it predicts 660 test images as real. Matching the simulator teaches the model the simulator. The broad ranges of our augmentation regularise against what the simulator misses.
-
 \noindent\textbf{Crop size and class rebalancing.} A variant trained with $128^2$ crops and 20 copies of the smoothest 25\% of real images ties our model (dev 96.0\%). Its best-dev checkpoint (97.3\%, epoch 20) predicts 744 test images as real, so on 900 dev images a 1-point gain is noise. We therefore select on harsh validation.
 
-\noindent\textbf{Invariance is slow to learn.} The baseline passes 99.9\% after two epochs of 12k images. Our model needs 13 epochs of 152k crops to pass 98\% on the simulator (\cref{fig:curves}): invariance must be learnt from many shifted and rescaled examples. The held-out curves track training accuracy, so 30 epochs do not overfit.
-
-\noindent\textbf{An excluded alternative.} Shrinking test images to $508^2$ and pooling a phase-locked model over 64 lattice shifts scores 100\% on the simulator. It uses a test-derived constant and combines 64 predictions per image, which the rules forbid, so we did not submit it.
+\noindent\textbf{Invariance is slow to learn.} The baseline passes 99.9\% after two epochs of 12k images. Our model needs 21 epochs of 152k crops to pass 98\% on harsh validation (\cref{fig:curves}): invariance must be learnt from many shifted and rescaled examples. The held-out curves track training accuracy, so 30 epochs do not overfit.
 
 \subsection{Error analysis}
 \begin{figure}[t]

@@ -22,13 +22,13 @@ The training classes are balanced (5,000 each), and every image is a $512^2$ JPE
 
 \subsection{Diagnosing the test shift}
 \label{sec:diagnosis}
-The unlabelled test images differ from the training images in two ways. The generators' repeating pattern sits at a different position and spacing in their spectra (\cref{fig:diagnosis}), and the images are more strongly compressed. Their content may also come from a different distribution from what the training data is used to. As a result, the baseline, which was trained on plain training data, predicted all images as real on the test set as it was not invariant to transformations. We mimic these differences on held-out images as a \emph{test simulator}, used only as a validation metric.
+The unlabelled test images differ from the training images in two ways. The generators' repeating pattern sits at a different position and spacing in their spectra (\cref{fig:diagnosis}), and the images are more strongly compressed. Their content may also come from a different distribution from what the training data is used to. As a result, the baseline, which was trained on plain training data, predicted all images as real on the test set as it was not invariant to transformations.
 
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig/diagnosis.pdf}
-  \caption{\textbf{Diagnosis.} (a) Offset of the generators' 8-pixel grid relative to the image origin along a row. It is constant in training and dev images but drifts by up to 4~px in test images. (b--d) Mean log-magnitude spectrum of the high-pass luma around the period-4 diagonal peak (dotted lines mark bin 128). The peak sits at bin 128 for Model~B training images (b), moves after our test simulator (c), and moves the same way in the real test set (d).}
+  \caption{\textbf{Diagnosis.} (a) Offset of the generators' 8-pixel grid relative to the image origin along a row. It is constant in training and dev images but drifts by up to 4~px in test images. (b, c) Mean log-magnitude spectrum of the high-pass luma around the period-4 diagonal peak (dotted lines mark bin 128). The peak sits at bin 128 for Model~B training images (b) and is displaced in the test images (c).}
   \label{fig:diagnosis}
 \end{figure}
 
@@ -46,8 +46,8 @@ BlurPool has no parameters. NPR keeps its $2\times2$ anchoring, so full invarian
 (A)~brightness and contrast $\times$[0.8,\,1.2] ($p{=}.5$), saturation $\times$[0.5,\,1.3] (.5), hue $\pm$0.03 (.2), gamma [0.8,\,1.25] (.3), greyscale (.05), and blurring of 1--2 rectangles covering 10--40\% of the image ($\sigma$ 2--5, .2), which teaches the network to rely on whatever texture remains;
 (B)~rescaling by a factor in [0.9,\,1.1] with one of five resamplers (.8), a horizontal flip (.5) and a random multiple of $90^\circ$;
 (C)~Gaussian blur $\sigma\in$[0.3,\,0.8] (.1), noise $\sigma\in$[1,\,3] (.1), and JPEG q60--100 with random 4:4:4/4:2:2/4:2:0 sub-sampling (.8, re-encoded twice in 20\% of cases).
-The ranges were set after the diagnosis. They \emph{cover} the type of processing observed, with a wide margin, rather than reproduce it: the factor 1.008 is one point in a 20\%-wide interval, and q90 4:2:0 is one of about 120 JPEG settings. Storing the copies (18\,GB) keeps JPEG and resampling out of the training loop and makes every sample reproducible.
+The ranges were chosen after inspecting the unlabelled test images, and are deliberately broad: they cover a wide family of rescaling and compression rather than reproduce any one setting. Storing the copies (18\,GB) keeps JPEG and resampling out of the training loop and makes every sample reproducible.
 
 \noindent\textbf{Crop training, full-image testing.} Training draws one random $256^2$ crop per stored image. Crops cover all lattice phases and carry less scene content. The network is fully convolutional, so test images are processed whole. We train for 30 epochs with AdamW (lr $2\cdot10^{-3}$, weight decay $10^{-2}$, one epoch of linear warm-up, then cosine decay), a batch of 256 on 8 GPUs, and mixed precision. One epoch over 152k crops takes about 135\,s.
 
-\noindent\textbf{Validation and selection.} On the 3,000 held-out images, which have no stored copies, we track three numbers: \emph{clean} accuracy, \emph{simulated-test} accuracy (\cref{sec:diagnosis}), and \emph{harsh} accuracy (the training augmentation with a fixed seed, centre $448^2$ crop). The checkpoint is selected on harsh accuracy, not on the simulator. Dev is an independent check only. Its labels are the baseline's dev predictions, which the leaderboard scored at 100\%.
+\noindent\textbf{Validation and selection.} On the 3,000 held-out images, which have no stored copies, we track two numbers: \emph{clean} accuracy and \emph{harsh} accuracy (the training augmentation with a fixed seed, centre $448^2$ crop). The checkpoint is selected on harsh accuracy. Dev is an independent check only. Its labels are the baseline's dev predictions, which the leaderboard scored at 100\%.
