@@ -5,7 +5,7 @@
 
 \subsection{Exploratory analysis}
 \label{sec:eda}
-The training classes are balanced (5,000 each), and every image is a $512^2$ JPEG at quality~95 with 4:4:4 chroma. To look for up-sampling traces, we averaged the log-magnitude Fourier spectrum of the high-pass luma (the image minus its $3\times3$ binomial blur) over 200 images per class. A pattern that repeats every $p$ pixels gives a peak at bin $512/p$, and we measure each peak by its height above the median of the surrounding $15\times15$ bins. All classes, real photographs included, have peaks on the axes at bins 64, 128 and 256 (height 0.6--0.9), which come from the $8\times8$ block grid of JPEG. Only the fakes also have diagonal peaks, where the pattern repeats in both directions at once. At the period-4 site (128,\,128) the height is $-0.07$ for real images, 0.60 for Model~A and 0.94 for Model~B. At the period-8 site (64,\,64) it is 0.00, 0.25 and 0.66. Both generators therefore leave a 2-D lattice with periods of 2, 4 and 8 pixels, consistent with repeated $2\times$ up-sampling~\cite{odena2016checkerboard,zhang2019spectrum}, and it is stronger for Model~B. So the input should expose the correlations between neighbouring pixels, and the first layers should keep full resolution.
+The training classes are balanced (5,000 each), and every image is a $512^2$ JPEG at quality~95 with 4:4:4 chroma. To look for up-sampling traces, we averaged the log-magnitude Fourier spectrum of the image minus its $3\times3$ binomial blur over 200 images per class. A pattern that repeats every $p$ pixels gives a peak at bin $512/p$ in the Fourier transformation. All classes, real photographs included, have peaks on the axes at bins 64, 128 and 256, which come from the $8\times8$ block grid of JPEG. Both generators therefore leave a 2-D grid with periods of 2, 4 and 8 pixels, consistent with repeated $2\times$ up-sampling~\cite{odena2016checkerboard,zhang2019spectrum}, and it is stronger for Model~B. Thus, the input should expose the correlations between neighbouring pixels.
 
 \subsection{Setting and baseline}
 \label{sec:baseline}
@@ -18,11 +18,12 @@ The training classes are balanced (5,000 each), and every image is a $512^2$ JPE
   $r$ removes most of the image content and remains are the correlations between adjacent pixels that generator up-sampling layers introduce. The network receives the six-channel concatenation $[x;\,r(x)]$. Because $|r|$ is about 20 times smaller than $|x|$, both are first normalised by a BatchNorm layer with no learnable scale or shift which puts the two inputs on a similar scale without adding parameters.
 
 
-\noindent\textbf{Baseline.} A ResNet-18~\cite{he2016resnet} with a $3\times3$, stride-1 stem and no max-pool, so stage~1 sees every residual pixel~\cite{gragnaniello2021critical}. It ends with global average pooling, dropout 0.2 and a linear layer (\cref{fig:overview}b). The \emph{baseline} is this network trained on whole $512^2$ images without augmentation and with early-stopping (AdamW, lr $10^{-3}$).
+\noindent\textbf{Baseline.} A ResNet-18~\cite{he2016resnet} with a $3\times3$, stride-1 stem and no max-pool, so stage~1 sees every residual pixel~\cite{gragnaniello2021critical}. It ends with global average pooling, dropout 0.2 and a linear layer (\cref{fig:overview}b). The \emph{baseline} is trained on whole $512^2$ images without augmentation and with early-stopping (AdamW, lr $10^{-3}$).
 
 \subsection{Diagnosing the test shift}
 \label{sec:diagnosis}
-We inspected the unlabelled test images. Their JPEG headers show quality~90 with 4:2:0 chroma sub-sampling, whereas all training and dev files are quality~95 with 4:4:4. The lattice peaks of the fake training images (\cref{sec:eda}) appear in the mean test spectrum one bin lower (\cref{fig:diagnosis}b,d): every test image was stretched by $s \approx 512/508 = 1.008$. A stretch moves the lattice by $x(1-1/s)$, \ie by one pixel every 127~pixels and by four pixels across the image (\cref{fig:diagnosis}a). We therefore define a \emph{test simulator}: crop $508^2$, bicubic resize to $512^2$, JPEG q90 4:2:0. On held-out images it reproduces the test failure (the baseline drops from 100\% to 34\%) and the displaced peak (\cref{fig:diagnosis}c). The simulator serves \emph{only} as a validation metric. Test images are never transformed, and the constant 508 enters neither the training data nor checkpoint selection.
+The unlabelled test images differ from the training images in two ways. The generators' repeating pattern sits at a different position and spacing in their spectra (\cref{fig:diagnosis}), and the images are more strongly compressed. Their content may also come from a different distribution from what the training data is used to. As a result, the baseline which was trained on plain training data predicted all images as real on the test set as it was not invariant to transformations.
+
 
 \begin{figure}[t]
   \centering
@@ -31,9 +32,9 @@ We inspected the unlabelled test images. Their JPEG headers show quality~90 with
   \label{fig:diagnosis}
 \end{figure}
 
-\subsection{v4: a phase-robust detector}
+\subsection{A transformation-robust detector}
 \label{sec:v4}
-The cue survives in the test images. What the network lacks is invariance to the lattice phase and to small changes of scale.
+To make the Baseline ResNet model more robust to different distributions and transformations, the followiing changes to the architecture and training were applied:
 
 \noindent\textbf{Anti-aliased down-sampling.} A stride-2 convolution keeps one pixel in four, so its output depends on the input position modulo 2. Stacked over three stages, the features depend on the position modulo 8, exactly the lattice period~\cite{azulay2019small}. In stages 2--4 we replace each stride-2 convolution, and its $1\times1$ shortcut, by a stride-1 convolution followed by BlurPool~\cite{zhang2019blurpool}:
 \begin{equation}
