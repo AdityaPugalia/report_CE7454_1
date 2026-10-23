@@ -48,12 +48,4 @@ The baseline is perfect on clean and dev data but labels every test image as rea
 \noindent\textbf{Invariance is slow to learn.} The baseline passes 99.9\% after two epochs of 12k images. Our model needs 21 epochs of 152k crops to pass 98\% on harsh validation (\cref{fig:curves}): invariance must be learnt from many shifted and rescaled examples. The held-out curves track training accuracy, so 30 epochs do not overfit.
 
 \subsection{Error analysis}
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{fig/failures.pdf}
-  \caption{\textbf{Most confident errors of our model on dev}: real photographs labelled as Model~A or~B with probability ${>}0.99$. Each scene is ordinary and textured; none shows visible processing.}
-  \label{fig:failures}
-\end{figure}
-The dev confusion matrix of our model (rows: true real/A/B) is
-$\left[\begin{smallmatrix}268&10&22\\2&298&0\\1&0&299\end{smallmatrix}\right]$.
-32 of its 35 errors are real images called fake. A and B are never confused with each other, and fake recall is 99.5\%. Real recall rises with texture, from 84\% for the smoothest quarter of real images to 92--93\% for the two most textured. Yet the most confident errors (\cref{fig:failures}) are ordinary textured photographs, which suggests our model partly relies on scene statistics of the training reals. The errors are therefore real versus fake, not A versus B.
+Almost all of our model's dev errors are real images called fake, and Models~A and~B are never confused with each other. Real recall rises with texture, from 84\% for the smoothest quarter of real images to 92--93\% for the two most textured, which suggests our model partly relies on the scene statistics of the training reals. The errors are therefore real versus fake, not A versus B.
