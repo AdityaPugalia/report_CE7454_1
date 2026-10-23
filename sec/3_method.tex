@@ -18,7 +18,7 @@ The training classes are balanced (5,000 each), and every image is a $512^2$ JPE
   $r$ removes most of the image content and remains are the correlations between adjacent pixels that generator up-sampling layers introduce. The network receives the six-channel concatenation $[x;\,r(x)]$. Because $|r|$ is about 20 times smaller than $|x|$, both are first normalised by a BatchNorm layer with no learnable scale or shift which puts the two inputs on a similar scale without adding parameters.
 
 
-\noindent\textbf{Baseline.} A ResNet-18~\cite{he2016resnet} with a $3\times3$, stride-1 stem and no max-pool, so stage~1 sees every residual pixel~\cite{gragnaniello2021critical}. It ends with global average pooling, dropout 0.2 and a linear layer (\cref{fig:overview}b). The \emph{baseline} is trained on whole $512^2$ images without augmentation and with early-stopping (AdamW, lr $10^{-3}$).
+\noindent\textbf{Baseline.} A ResNet-18~\cite{he2016resnet} with a $3\times3$, stride-1 stem and no max-pool, so stage~1 sees every residual pixel~\cite{gragnaniello2021critical}. It ends with global average pooling, dropout 0.2 and a linear layer. This is the network of \cref{fig:overview}b with ordinary stride-2 convolutions in place of BlurPool. The \emph{baseline} is trained on whole $512^2$ images without augmentation and with early-stopping (AdamW, lr $10^{-3}$).
 
 \subsection{Diagnosing the test shift}
 \label{sec:diagnosis}

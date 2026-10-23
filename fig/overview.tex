@@ -11,7 +11,7 @@
     lab/.style={font=\footnotesize\bfseries, anchor=west},
     arr/.style={->, thick, black!70}]
 % ---------------------------------------------------------------- (a) data
-\node[lab] at (-0.55, 1.25) {(a) Training data: offline augmentation, generic (not tuned to the test set)};
+\node[lab] at (-0.55, 1.25) {(a) Training data: offline augmentation};
 \node[data, text width=17mm] (src) at (0.55,0) {12,000 train\\images, $512^2$\\JPEG q95};
 \node[aug, right=6mm of src, yshift=4.5mm] (a1) {\textbf{A} brightness, contrast, saturation, hue, gamma, grey};
 \node[aug, below=0.8mm of a1] (a2) {smooth-patch blur (label kept)};
@@ -50,7 +50,7 @@
 \end{scope}
 \end{tikzpicture}
 \vspace{-1mm}
-\caption{\textbf{Overview.} (a) Each training image is turned into 10 (or 20) stored augmented copies whose operations bracket, but are not fitted to, the unknown test-time processing; training draws a random $256^2$ crop. (b) The fully convolutional ArtifactResNet reads the RGB image and its neighbouring-pixel residual at full resolution and down-samples only through blurred (anti-aliased) strides, so it can be trained on crops and applied to whole $512^2$ test images.}
+\caption{\textbf{Overview.} (a) Each training image is turned into 10 (or 20) stored augmented copies covering a broad range of photometric, rescaling and compression changes; training draws a random $256^2$ crop. (b) Our fully convolutional network reads the RGB image and its neighbouring-pixel residual at full resolution and down-samples only through blurred (anti-aliased) strides, so it can be trained on crops and applied to whole $512^2$ test images.}
 \label{fig:overview}
 \vspace{-2mm}
 \end{figure*}
