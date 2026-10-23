@@ -50,7 +50,7 @@
 \end{scope}
 \end{tikzpicture}
 \vspace{-1mm}
-\caption{\textbf{Overview.} (a) Each training image is turned into 10 (or 20) stored augmented copies covering a broad range of photometric, rescaling and compression changes; training draws a random $256^2$ crop. (b) Our fully convolutional network reads the RGB image and its neighbouring-pixel residual at full resolution and down-samples only through blurred (anti-aliased) strides, so it can be trained on crops and applied to whole $512^2$ test images.}
+\caption{\textbf{Overview.} (a) Each training image is turned into 10 (or 20) stored augmented copies covering a broad range of photometric, rescaling and compression changes; training draws a random $256^2$ crop. (b) The fully convolutional network reads the RGB image and its neighbouring-pixel residual at full resolution and down-samples only through blurred strides, so it can be trained on crops.}
 \label{fig:overview}
 \vspace{-2mm}
 \end{figure*}

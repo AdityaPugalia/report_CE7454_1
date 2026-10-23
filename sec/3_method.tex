@@ -36,18 +36,18 @@ The unlabelled test images differ from the training images in two ways. The gene
 \label{sec:v4}
 To make the baseline ResNet model more robust to different distributions and transformations, the following changes to the architecture and training were applied:
 
-\noindent\textbf{Anti-aliased down-sampling.} A stride-2 convolution keeps one pixel in four, so its output depends on the input position modulo 2. Stacked over three stages, the features depend on the position modulo 8, exactly the lattice period~\cite{azulay2019small}. In stages 2--4 we replace each stride-2 convolution, and its $1\times1$ shortcut, by a stride-1 convolution followed by BlurPool~\cite{zhang2019blurpool}:
+\noindent\textbf{Anti-aliased down-sampling.} A stride-2 convolution keeps one pixel in four, so its output depends on the input position modulo 2. Stacked over three stages, the features depend on the position modulo 8, exactly the grid period~\cite{azulay2019small}. In stages 2--4 we replace each stride-2 convolution, and its $1\times1$ shortcut, by a stride-1 convolution followed by BlurPool~\cite{zhang2019blurpool}:
 \begin{equation}
   \mathrm{BP}(h) = \big(h * \tfrac{1}{16}[1\;2\;1]^{\top}[1\;2\;1]\big)\!\downarrow_2 .
 \end{equation}
 BlurPool has no parameters. NPR keeps its $2\times2$ anchoring, so full invariance must still be learnt from data.
 
-\noindent\textbf{Offline augmentation.} We store 10 augmented copies of every training image, and 20 copies for the 25\% of fakes with the least texture (mean absolute luma high-pass), which are the hardest fakes. That gives 140k copies, plus the 12k originals (\cref{fig:overview}a). Each copy passes through a random chain:
+\noindent\textbf{Offline augmentation.} We store 10 augmented copies of every training image, and 20 copies for the 25\% of fakes with the least texture, which are the hardest fakes. That gives 140k copies, plus the 12k originals (\cref{fig:overview}a). Each copy passes through a random chain: \newline
 (A)~brightness and contrast $\times$[0.8,\,1.2] ($p{=}.5$), saturation $\times$[0.5,\,1.3] (.5), hue $\pm$0.03 (.2), gamma [0.8,\,1.25] (.3), greyscale (.05), and blurring of 1--2 rectangles covering 10--40\% of the image ($\sigma$ 2--5, .2), which teaches the network to rely on whatever texture remains;
 (B)~rescaling by a factor in [0.9,\,1.1] with one of five resamplers (.8), a horizontal flip (.5) and a random multiple of $90^\circ$;
 (C)~Gaussian blur $\sigma\in$[0.3,\,0.8] (.1), noise $\sigma\in$[1,\,3] (.1), and JPEG q60--100 with random 4:4:4/4:2:2/4:2:0 sub-sampling (.8, re-encoded twice in 20\% of cases).
 The ranges were chosen after inspecting the unlabelled test images, and are deliberately broad: they cover a wide family of rescaling and compression rather than reproduce any one setting. Storing the copies (18\,GB) keeps JPEG and resampling out of the training loop and makes every sample reproducible.
 
-\noindent\textbf{Crop training, full-image testing.} Training draws one random $256^2$ crop per stored image. Crops cover all lattice phases and carry less scene content. The network is fully convolutional, so test images are processed whole. We train for 30 epochs with AdamW (lr $2\cdot10^{-3}$, weight decay $10^{-2}$, one epoch of linear warm-up, then cosine decay), a batch of 256 on 8 GPUs, and mixed precision. One epoch over 152k crops takes about 135\,s.
+\noindent\textbf{Crop training, full-image testing.} Training draws one random $256^2$ crop per stored image. Crops cover all lattice phases and carry less scene content. The network is trained for 30 epochs with AdamW (lr $2\cdot10^{-3}$, weight decay $10^{-2}$, one epoch of linear warm-up, then cosine decay), a batch of 256 on 8 GPUs, and mixed precision. One epoch over 152k crops takes about 135\,s.
 
-\noindent\textbf{Validation and selection.} On the 3,000 held-out images, which have no stored copies, we track two numbers: \emph{clean} accuracy and \emph{harsh} accuracy (the training augmentation with a fixed seed, centre $448^2$ crop). The checkpoint is selected on harsh accuracy. Dev is an independent check only. Its labels are the baseline's dev predictions, which the leaderboard scored at 100\%.
+\noindent\textbf{Validation and selection.} On the 3,000 held-out images, which have no stored copies, we track two numbers: \emph{clean} accuracy and \emph{harsh} accuracy (the training augmentation with a fixed seed, centre $448^2$ crop). The checkpoint is selected on harsh accuracy. Dev is an independent check only.
