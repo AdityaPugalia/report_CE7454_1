@@ -30,8 +30,8 @@ The baseline is perfect on clean and dev data but labels every test image as rea
 \end{figure}
 
 \subsection{What does my model read differently?}
-\Cref{fig:probes} perturbs the held-out images without retraining.
-The baseline drops to chance for every shift in the grid phase that is not a multiple of 8 and for flips and rotations. These move or mirror the grid without removing it, which confirms the diagnosis. My model is unaffected (99.7\%).
+\Cref{fig:probes} shows the perturbations applied to the validation images without retraining.
+The baseline drops to chance for every shift in the grid phase that is not a multiple of 8 and for flips and rotations. These move or mirror the grid without removing it, which confirms the diagnosis [~\Cref{sec:diagnosis}]. My model is unaffected (99.7\%).
 \emph{Scale.} A $\pm10\%$ rescale is fatal for the baseline (33\%) and costs my model 8--12 points. Halving the resolution, outside the training range, leaves my model at 80.9\%.
 \emph{Compression and noise.} JPEG q50 costs my model 2 points (baseline: 53), and Gaussian noise with $\sigma{=}5$ costs it 3.5 points (baseline: 36). The one cost of robustness is blur: $\sigma{=}1$ costs my model 2.3 points and the baseline only 0.1.
 
