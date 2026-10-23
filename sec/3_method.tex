@@ -40,7 +40,7 @@ To make the baseline ResNet model more robust to different distributions and tra
 \begin{equation}
   \mathrm{BP}(h) = \big(h * \tfrac{1}{16}[1\;2\;1]^{\top}[1\;2\;1]\big)\!\downarrow_2 ,
 \end{equation}
-where $h$ is the feature map, $*$ is a convolution of each channel with a fixed $3\times3$ blur kernel, and $\downarrow_2$ keeps every second pixel in each direction. Each kept value is now a weighted average of its neighbourhood, so it also carries information from the pixels that are discarded, and a one-pixel shift of the input changes the output only slightly. BlurPool has no learnable parameters, so the parameter count is unchanged. It does not make the network fully shift-invariant on its own: the NPR input is still computed on fixed $2\times2$ blocks, so the remaining invariance has to be learnt from the augmented, randomly cropped training data.
+where $h$ is the feature map, $*$ is a convolution of each channel with a fixed $3\times3$ blur kernel, and $\downarrow_2$ keeps every second pixel in each direction. Each kept value is now a weighted average of its neighbourhood, so it also carries information from the pixels that are discarded, and a one-pixel shift of the input changes the output only slightly. BlurPool has no learnable parameters, so the parameter count is unchanged.
 
 \noindent\textbf{Offline augmentation.} I store 10 augmented copies of every training image, and 20 copies for the 25\% of fakes with the least texture, which are the hardest fakes. That gives 140k copies, plus the 12k originals (\cref{fig:overview}a). Each copy is made by applying three groups of random changes in turn. Every change is applied with the probability given in parentheses.
 

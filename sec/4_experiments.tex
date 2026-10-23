@@ -48,4 +48,4 @@ The baseline drops to chance for every shift in the grid phase that is not a mul
 \noindent\textbf{Invariance is slow to learn.} The baseline passes 99.9\% after two epochs of 12k images. My model needs 21 epochs of 152k crops to pass 98\% on harsh validation (\cref{fig:curves}),thus, invariance must be learnt from many shifted and rescaled examples. 
 
 \subsection{Error analysis}
-Almost all of my model's dev errors are real images called fake, and Models~A and~B are never confused with each other. Real recall rises with texture, from 84\% for the smoothest quarter of real images to 92--93\% for the two most textured, which suggests my model partly relies on the scene statistics of the training reals. The errors are therefore real versus fake, not A versus B.
+Almost all of my model's dev errors are real images called fake, and Models~A and~B are never confused with each other. Real recall rises with texture, from 84\% for the smoothest quarter of real images to 92--93\% for the two most textured, which suggests my model partly relies on the scene statistics of the training reals.
