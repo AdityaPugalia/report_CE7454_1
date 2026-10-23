@@ -1,0 +1,48 @@
+\section{Method}
+\label{sec:method}
+
+\input{fig/overview}
+
+\subsection{Setting and baseline}
+\label{sec:baseline}
+
+\noindent\textbf{Residual input.} Let $x \in \mathbb{R}^{3\times H\times W}$ be the input RGB image. We define two fixed operators. The down-sampling operator $D_2$ keeps only the top-left pixel of every non-overlapping $2\times2$ block, giving an image of size $\frac{H}{2}\times\frac{W}{2}$. The up-sampling operator $U_2$ is nearest-neighbour up-sampling by two, which copies each pixel back into a $2\times2$ block. Applying both, $U_2 D_2\, x$, therefore gives an $H\times W$ image in which every pixel is replaced by the top-left pixel of its block. The neighbouring-pixel residual (NPR)~\cite{tan2024npr} is the difference between the image and this copy,
+\begin{equation}
+  r(x) = x - U_2 D_2\, x
+  \label{eq:npr}
+\end{equation}
+  $r$ removes most of the image content and remains are the correlations between adjacent pixels that generator up-sampling layers introduce. The network receives the six-channel concatenation $[x;\,r(x)]$. Because $|r|$ is about 20 times smaller than $|x|$, both are first normalised by a BatchNorm layer with no learnable scale or shift which puts the two inputs on a similar scale without adding parameters.
+
+
+\noindent\textbf{Baseline.} A ResNet-18~\cite{he2016resnet} with a $3\times3$, stride-1 stem and no max-pool, so stage~1 sees every residual pixel~\cite{gragnaniello2021critical}. It ends with global average pooling, dropout 0.2 and a linear layer (\cref{fig:overview}b). The \emph{baseline} is this network trained on whole $512^2$ images without augmentation and with early-stopping (AdamW, lr $10^{-3}$).
+
+\subsection{Diagnosing the test shift}
+\label{sec:diagnosis}
+We inspected the unlabelled test images. Their JPEG headers show quality~90 with 4:2:0 chroma sub-sampling, whereas all training and dev files are quality~95 with 4:4:4. Fake training images show sharp spectral peaks of their high-pass luma at periods 8, 4 and 2 pixels, \ie at bins 64, 128 and 256 of 512. The mean test spectrum shows the same peaks one bin lower (\cref{fig:diagnosis}b,d): every test image was stretched by $s \approx 512/508 = 1.008$. A stretch moves the lattice by $x(1-1/s)$, \ie by one pixel every 127~pixels and by four pixels across the image (\cref{fig:diagnosis}a). We therefore define a \emph{test simulator}: crop $508^2$, bicubic resize to $512^2$, JPEG q90 4:2:0. On held-out images it reproduces the test failure (the baseline drops from 100\% to 34\%) and the displaced peak (\cref{fig:diagnosis}c). The simulator serves \emph{only} as a validation metric. Test images are never transformed, and the constant 508 enters neither the training data nor checkpoint selection.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig/diagnosis.pdf}
+  \caption{\textbf{Diagnosis.} (a) Offset of the generators' 8-pixel lattice relative to the image origin along a row. It is constant in training and dev images and drifts by up to 4~px in test images after a $512/508$ stretch. (b--d) Mean log-magnitude spectrum of the high-pass luma around the period-4 diagonal site at bin 128 (dotted lines). The peak sits exactly at 128 for Model~B training images (b) and moves to 127 after our simulated processing (c), matching the real test set (d).}
+  \label{fig:diagnosis}
+\end{figure}
+
+\subsection{v4: a phase-robust detector}
+\label{sec:v4}
+The cue survives in the test images. What the network lacks is invariance to the lattice phase and to small changes of scale.
+
+\noindent\textbf{Anti-aliased down-sampling.} A stride-2 convolution keeps one pixel in four, so its output depends on the input position modulo 2. Stacked over three stages, the features depend on the position modulo 8, exactly the lattice period~\cite{azulay2019small}. In stages 2--4 we replace each stride-2 convolution, and its $1\times1$ shortcut, by a stride-1 convolution followed by BlurPool~\cite{zhang2019blurpool}:
+\begin{equation}
+  \mathrm{BP}(h) = \big(h * \tfrac{1}{16}[1\;2\;1]^{\top}[1\;2\;1]\big)\!\downarrow_2 .
+\end{equation}
+BlurPool has no parameters. NPR keeps its $2\times2$ anchoring, so full invariance must still be learnt from data.
+
+\noindent\textbf{Offline augmentation.} We store 10 augmented copies of every training image, and 20 copies for the 25\% of fakes with the least texture (mean absolute luma high-pass), which are the hardest fakes. That gives 140k copies, plus the 12k originals (\cref{fig:overview}a). Each copy passes through a random chain:
+(A)~brightness and contrast $\times$[0.8,\,1.2] ($p{=}.5$), saturation $\times$[0.5,\,1.3] (.5), hue $\pm$0.03 (.2), gamma [0.8,\,1.25] (.3), greyscale (.05), and blurring of 1--2 rectangles covering 10--40\% of the image ($\sigma$ 2--5, .2), which teaches the network to rely on whatever texture remains;
+(B)~rescaling by a factor in [0.9,\,1.1] with one of five resamplers (.8), a horizontal flip (.5) and a random multiple of $90^\circ$;
+(C)~Gaussian blur $\sigma\in$[0.3,\,0.8] (.1), noise $\sigma\in$[1,\,3] (.1), and JPEG q60--100 with random 4:4:4/4:2:2/4:2:0 sub-sampling (.8, re-encoded twice in 20\% of cases).
+The ranges were set after the diagnosis. They \emph{cover} the type of processing observed, with a wide margin, rather than reproduce it: the factor 1.008 is one point in a 20\%-wide interval, and q90 4:2:0 is one of about 120 JPEG settings. Storing the copies (18\,GB) keeps JPEG and resampling out of the training loop and makes every sample reproducible.
+
+\noindent\textbf{Crop training, full-image testing.} Training draws one random $256^2$ crop per stored image. Crops cover all lattice phases and carry less scene content. The network is fully convolutional, so test images are processed whole. We train for 30 epochs with AdamW (lr $2\cdot10^{-3}$, weight decay $10^{-2}$, one epoch of linear warm-up, then cosine decay), a batch of 256 on 8 GPUs, and mixed precision. One epoch over 152k crops takes about 135\,s.
+
+\noindent\textbf{Validation and selection.} On the 3,000 held-out images, which have no stored copies, we track three numbers: \emph{clean} accuracy, \emph{simulated-test} accuracy (\cref{sec:diagnosis}), and \emph{harsh} accuracy (the training augmentation with a fixed seed, centre $448^2$ crop). The checkpoint is selected on harsh accuracy, not on the simulator. Dev is an independent check only. Its labels are the baseline's dev predictions, which the leaderboard scored at 100\%.

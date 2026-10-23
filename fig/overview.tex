@@ -1,0 +1,56 @@
+% Fig. 1: training-data pipeline (top) and network (bottom). Pure TikZ, compiles on Overleaf.
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+    font=\footnotesize, >={Stealth[length=4pt]}, node distance=3mm,
+    box/.style={draw=black!70, rounded corners=1.5pt, align=center, inner sep=2.5pt, minimum height=9mm},
+    data/.style={box, fill=blue!6},
+    op/.style={box, fill=orange!10},
+    aug/.style={draw=black!50, rounded corners=1pt, fill=orange!10, align=left, inner sep=1.6pt, font=\scriptsize, text width=23mm},
+    net/.style={box, fill=green!8},
+    lab/.style={font=\footnotesize\bfseries, anchor=west},
+    arr/.style={->, thick, black!70}]
+% ---------------------------------------------------------------- (a) data
+\node[lab] at (-0.55, 1.25) {(a) Training data: offline augmentation, generic (not tuned to the test set)};
+\node[data, text width=17mm] (src) at (0.55,0) {12,000 train\\images, $512^2$\\JPEG q95};
+\node[aug, right=6mm of src, yshift=4.5mm] (a1) {\textbf{A} brightness, contrast, saturation, hue, gamma, grey};
+\node[aug, below=0.8mm of a1] (a2) {smooth-patch blur (label kept)};
+\node[aug, right=1.6mm of a1] (b1) {\textbf{B} rescale $\times$0.9--1.1, 5 resamplers};
+\node[aug, below=0.8mm of b1] (b2) {flip, rot90};
+\node[aug, right=1.6mm of b1] (c1) {\textbf{C} blur $\sigma{\le}0.8$, noise $\sigma{\le}3$};
+\node[aug, below=0.8mm of c1] (c2) {JPEG q60--100, 4:4:4/ 4:2:2/4:2:0; 20\% twice};
+\node[draw=orange!70!black, dashed, rounded corners=2pt, inner sep=2pt, fit=(a1)(a2)(b1)(b2)(c1)(c2),
+      label={[font=\scriptsize, text=orange!50!black]below:$\times10$ copies per image ($\times20$ for the smoothest 25\% of fakes), stored once}] (augbox) {};
+\node[data, right=5mm of augbox, text width=17mm] (store) {152k images\\(12k originals +\\140k copies)};
+\node[op, right=of store, text width=11mm] (crop) {random\\$256^2$ crop};
+\node[net, right=of crop, text width=10mm] (netA) {network\\(b)};
+\node[op, right=of netA, text width=10mm] (ce) {cross-\\entropy};
+\draw[arr] (src) -- (src -| augbox.west);
+\draw[arr] (augbox) -- (store); \draw[arr] (store) -- (crop); \draw[arr] (crop) -- (netA); \draw[arr] (netA) -- (ce);
+% ---------------------------------------------------------------- (b) network
+\begin{scope}[yshift=-2.75cm]
+\node[lab] at (-0.55, 0.95) {(b) Network: NPR input, full-resolution stem, anti-aliased down-sampling (11.17M parameters)};
+\node[data, text width=12mm] (x) at (0.3,0) {image $x$\\$3{\times}H{\times}W$};
+\node[op, text width=29mm, minimum height=6mm] (npr) at (2.35,-1.05) {NPR residual (0 params)\\$r(x)=x-U_2D_2\,x$};
+\node[op, text width=14mm] (cat) at (4.45,0) {$[x;\,r(x)]$, 6 ch\\BN (non-affine)};
+\draw[arr] (x) -- (cat); \draw[arr] (x.south) |- (npr.west); \draw[arr] (npr.east) -| (cat.south);
+\node[net, right=3mm of cat, text width=12.5mm, minimum height=16mm] (stem) {stem\\$3{\times}3$, s1\\64\,@\,$H$};
+\node[net, right=2.5mm of stem, text width=12.5mm, minimum height=16mm] (s1) {stage 1\\2 blocks\\64\,@\,$H$};
+\node[net, right=2mm of s1, text width=13mm, minimum height=12.5mm] (s2) {stage 2\\128\,@\,$H/2$};
+\node[net, right=2mm of s2, text width=13mm, minimum height=10mm] (s3) {stage 3\\256\,@\,$H/4$};
+\node[net, right=2mm of s3, text width=13mm, minimum height=8mm] (s4) {stage 4\\512\,@\,$H/8$};
+\node[op, right=3mm of s4, text width=12mm] (head) {GAP, drop-out, FC};
+\node[data, right=2.5mm of head, text width=10mm] (out) {arg-max\\0 / 1 / 2};
+\foreach \a/\b in {cat/stem, stem/s1, s1/s2, s2/s3, s3/s4, s4/head, head/out} \draw[arr] (\a) -- (\b);
+\node[draw=black!50, rounded corners=1pt, fill=green!4, align=left, font=\scriptsize, text width=70mm, anchor=north west] (bp)
+  at ($(s2.south west)+(0,-1.5mm)$)
+  {\textbf{Down-sampling} (first block of stages 2--4, main and shortcut path): conv $3{\times}3$ \emph{stride 1} $\to$ BlurPool $\frac{1}{16}[1\,2\,1]^{\!\top}[1\,2\,1]$, keep every 2nd pixel. Features change smoothly under sub-pixel shifts.};
+\node[font=\scriptsize, align=left, text=black!75, anchor=north west] at ($(npr.south west)+(0,-1mm)$)
+  {train: $H{=}256$ crops; test: $H{=}512$, the image\\as given, one forward pass, no TTA};
+\end{scope}
+\end{tikzpicture}
+\vspace{-1mm}
+\caption{\textbf{Overview.} (a) Each training image is turned into 10 (or 20) stored augmented copies whose operations bracket, but are not fitted to, the unknown test-time processing; training draws a random $256^2$ crop. (b) The fully convolutional ArtifactResNet reads the RGB image and its neighbouring-pixel residual at full resolution and down-samples only through blurred (anti-aliased) strides, so it can be trained on crops and applied to whole $512^2$ test images.}
+\label{fig:overview}
+\vspace{-2mm}
+\end{figure*}

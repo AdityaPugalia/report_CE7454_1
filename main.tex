@@ -1,0 +1,42 @@
+% CE7454 Assignment 1 report, built on the CVPR 2026 author kit
+% (https://github.com/cvpr-org/author-kit). Compile with pdflatex + bibtex.
+
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+%%%%%%%%% PAPER TYPE
+% \usepackage[review]{cvpr}      % review version (line numbers, anonymous)
+\usepackage[pagenumbers]{cvpr}   % camera-ready layout with page numbers
+
+\input{preamble}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc}
+
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
+
+\def\paperID{CE7454}
+\def\confName{CVPR}
+\def\confYear{2026}
+
+\title{A Perfect Detector Undone by a 0.8\% Rescale:\\
+Phase-Robust Three-Way Generator Attribution from Scratch}
+
+\author{Pugalia Aditya Kumar\\
+Graduate College (IGP AI-X), Nanyang Technological University\\
+{\tt\small Adityaku004@e.ntu.edu.sg}
+}
+
+\begin{document}
+\maketitle
+\input{sec/0_abstract}
+\input{sec/1_intro}
+\input{sec/2_related}
+\input{sec/3_method}
+\input{sec/4_experiments}
+\input{sec/5_conclusion}
+{
+    \small
+    \bibliographystyle{ieeenat_fullname}
+    \bibliography{main}
+}
+\end{document}

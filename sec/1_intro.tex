@@ -1,0 +1,9 @@
+\section{Introduction}
+\label{sec:intro}
+
+The project is based on an AI generated image detection task where the pipeline needs to distinguish between a real image (class~0) or one of two undisclosed generators, Model~A (class 1) and Model~B (class 2). The training data had 15,000 labelled $512\times512$ JPEGs with equal distribution for each class. For this task a model using ResNet style architecture with about 11.17M trainable parameters was trained from scratch using no external data, ensembles, distillation or test-time methods.
+
+Image generators create images by repeatedly up-sampling a small feature map to full resolution, usually with transposed convolutions or nearest-neighbour interpolation followed by convolution. Each output pixel is computed from a few input values, and neighbouring pixels are therefore correlated in a fixed, periodic way ~\cite{odena2016checkerboard,zhang2019spectrum,tan2024npr}. A small ResNet that is given these correlations explicitly, through the neighbouring-pixel residual (NPR)~\cite{tan2024npr} and a stem without stride~\cite{gragnaniello2021critical}, scores 100\% on the validation set and dev data. However, on the test set it labels \emph{every} image as real. The test images had been post-processed, showing that even though the simple ResNet architecture can accurately learn the generators' pattern, it is not invariant to transformations.
+
+\noindent\textbf{Contributions.}
+An augmentation-robust detector that combines BlurPool down-sampling~\cite{zhang2019blurpool}, crop training and broad offline augmentation to accurately classify the image source.

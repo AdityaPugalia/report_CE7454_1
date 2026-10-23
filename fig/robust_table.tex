@@ -1,0 +1,24 @@
+\begin{table}[t]
+  \centering\small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lccc@{}}
+    \toprule
+    Perturbation & RGB\,+\,NPR & RGB only & NPR only \\
+    \midrule
+    None (clean) & 100 & 100 & 100 \\
+    JPEG q=95 & 100 & 99.9 & 99.6 \\
+    JPEG q=90 & 98.7 & 99.2 & 95.7 \\
+    JPEG q=75 & 75.4 & 87.2 & 71.6 \\
+    JPEG q=50 & 50.2 & 70.2 & 54.7 \\
+    Resize $512{\to}256{\to}512$ & 97.3 & 96.8 & 88.8 \\
+    Resize $512{\to}256$ & 36.5 & 36.4 & 38.0 \\
+    Centre crop $384^2$ & 99.9 & 99.7 & 99.9 \\
+    Centre crop $256^2$ & 99.4 & 97.9 & 99.1 \\
+    Gaussian blur $\sigma{=}1$ & 99.9 & 99.7 & 99.6 \\
+    Gaussian noise $\sigma{=}2$ & 98.0 & 99.5 & 81.7 \\
+    Gaussian noise $\sigma{=}5$ & 67.4 & 90.9 & 43.3 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Post-hoc robustness: validation accuracy (\%) of the three trained models when the validation images are perturbed before inference. No model is retrained. Resizes use bilinear filtering; noise is i.i.d.\ per pixel in 8-bit units.}
+  \label{tab:robust}
+\end{table}
