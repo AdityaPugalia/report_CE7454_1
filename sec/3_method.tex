@@ -28,7 +28,7 @@ The unlabelled test images differ from the training images in two ways. The gene
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig/diagnosis.pdf}
-  \caption{\textbf{Diagnosis.} (a) Offset of the generators' 8-pixel grid relative to the image origin along a row. It is constant in training and dev images but drifts by up to 4~px in test images. (b, c) Mean log-magnitude spectrum of the high-pass luma around the period-4 diagonal peak (dotted lines mark bin 128). The peak sits at bin 128 for Model~B training images (b) and is displaced in the test images (c).}
+  \caption{\textbf{Why the baseline fails on test.} (a) Where the generators' repeating 8-pixel pattern sits, measured from the left edge of the image. In training and dev images it always starts at the same place (orange line). In test images it slowly slides as you move across the image, ending up to 4 pixels out of place (blue line). (b, c) A zoomed-in part of the average frequency spectrum, showing the peak produced by the pattern. The dotted lines mark where the peak should be. It sits exactly there in Model~B training images (b), but is slightly off in the test images (c), which is how the shift was detected.}
   \label{fig:diagnosis}
 \end{figure}
 
