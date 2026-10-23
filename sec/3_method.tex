@@ -5,7 +5,7 @@
 
 \subsection{Exploratory analysis}
 \label{sec:eda}
-The training classes are balanced (5,000 each), and every image is a $512^2$ JPEG at quality~95 with 4:4:4 chroma. To look for up-sampling traces, we averaged the log-magnitude Fourier spectrum of the image minus its $3\times3$ binomial blur over 200 images per class. A pattern that repeats every $p$ pixels gives a peak at bin $512/p$ in the Fourier transformation. All classes, real photographs included, have peaks on the axes at bins 64, 128 and 256, which come from the $8\times8$ block grid of JPEG. Both generators therefore leave a 2-D grid with periods of 2, 4 and 8 pixels, consistent with repeated $2\times$ up-sampling~\cite{odena2016checkerboard,zhang2019spectrum}, and it is stronger for Model~B. Thus, the input should expose the correlations between neighbouring pixels.
+The training classes are balanced (5,000 each), and every image is a $512^2$ JPEG at quality~95 with 4:4:4 chroma. To look for up-sampling traces, we averaged the log-magnitude Fourier spectrum of the image minus its $3\times3$ binomial blur over 200 images per class. A pattern that repeats every $p$ pixels gives a peak at bin $512/p$ in the Fourier transformation. All classes, real photographs included, have peaks on the axes at bins 64, 128 and 256, which come from the $8\times8$ block grid of JPEG. Only the fakes also have peaks on the diagonals, where the pattern repeats in both directions. Both generators therefore leave a 2-D grid with periods of 2, 4 and 8 pixels, consistent with repeated $2\times$ up-sampling~\cite{odena2016checkerboard,zhang2019spectrum}, and it is stronger for Model~B. Thus, the input should expose the correlations between neighbouring pixels.
 
 \subsection{Setting and baseline}
 \label{sec:baseline}
@@ -22,19 +22,19 @@ The training classes are balanced (5,000 each), and every image is a $512^2$ JPE
 
 \subsection{Diagnosing the test shift}
 \label{sec:diagnosis}
-The unlabelled test images differ from the training images in two ways. The generators' repeating pattern sits at a different position and spacing in their spectra (\cref{fig:diagnosis}), and the images are more strongly compressed. Their content may also come from a different distribution from what the training data is used to. As a result, the baseline which was trained on plain training data predicted all images as real on the test set as it was not invariant to transformations.
+The unlabelled test images differ from the training images in two ways. The generators' repeating pattern sits at a different position and spacing in their spectra (\cref{fig:diagnosis}), and the images are more strongly compressed. Their content may also come from a different distribution from what the training data is used to. As a result, the baseline, which was trained on plain training data, predicted all images as real on the test set as it was not invariant to transformations. We mimic these differences on held-out images as a \emph{test simulator}, used only as a validation metric.
 
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig/diagnosis.pdf}
-  \caption{\textbf{Diagnosis.} (a) Offset of the generators' 8-pixel lattice relative to the image origin along a row. It is constant in training and dev images and drifts by up to 4~px in test images after a $512/508$ stretch. (b--d) Mean log-magnitude spectrum of the high-pass luma around the period-4 diagonal site at bin 128 (dotted lines). The peak sits exactly at 128 for Model~B training images (b) and moves to 127 after our simulated processing (c), matching the real test set (d).}
+  \caption{\textbf{Diagnosis.} (a) Offset of the generators' 8-pixel grid relative to the image origin along a row. It is constant in training and dev images but drifts by up to 4~px in test images. (b--d) Mean log-magnitude spectrum of the high-pass luma around the period-4 diagonal peak (dotted lines mark bin 128). The peak sits at bin 128 for Model~B training images (b), moves after our test simulator (c), and moves the same way in the real test set (d).}
   \label{fig:diagnosis}
 \end{figure}
 
 \subsection{A transformation-robust detector}
 \label{sec:v4}
-To make the Baseline ResNet model more robust to different distributions and transformations, the followiing changes to the architecture and training were applied:
+To make the baseline ResNet model more robust to different distributions and transformations, the following changes to the architecture and training were applied:
 
 \noindent\textbf{Anti-aliased down-sampling.} A stride-2 convolution keeps one pixel in four, so its output depends on the input position modulo 2. Stacked over three stages, the features depend on the position modulo 8, exactly the lattice period~\cite{azulay2019small}. In stages 2--4 we replace each stride-2 convolution, and its $1\times1$ shortcut, by a stride-1 convolution followed by BlurPool~\cite{zhang2019blurpool}:
 \begin{equation}
