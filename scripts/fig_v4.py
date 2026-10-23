@@ -42,7 +42,7 @@ plt.savefig("fig/diagnosis.pdf", bbox_inches="tight", pad_inches=0.01); plt.clos
 P = A["probes"]
 fig, (a1, a2) = plt.subplots(1, 2, figsize=(3.35, 1.75), gridspec_kw={"width_ratios": [1.0, 1.0], "wspace": 0.85})
 d = list(range(9))
-for name, col, lab in (("baseline", BASE, "baseline"), ("v4", V4, "ours")):
+for name, col, lab in (("baseline", BASE, "baseline"), ("v4", V4, "proposed")):
     a1.plot(d, [100 * P[name][f"shift {k}"] for k in d], color=col, marker="o", ms=2.8, lw=1.3, label=lab)
 a1.axhline(100 / 3, color=MUTED, lw=0.7, ls="--"); a1.text(4, 36.5, "chance", fontsize=6, ha="center", color=MUTED)
 a1.set(xlabel="diagonal crop shift $d$ (px)", ylabel="val. accuracy (%)", xticks=d, ylim=(25, 104))
