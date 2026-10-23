@@ -36,11 +36,11 @@ The unlabelled test images differ from the training images in two ways. The gene
 \label{sec:v4}
 To make the baseline ResNet model more robust to different distributions and transformations, the following changes to the architecture and training were applied:
 
-\noindent\textbf{Anti-aliased down-sampling.} A stride-2 convolution keeps one pixel in four, so its output depends on the input position modulo 2. Stacked over three stages, the features depend on the position modulo 8, exactly the grid period~\cite{azulay2019small}. In stages 2--4 I replace each stride-2 convolution, and its $1\times1$ shortcut, by a stride-1 convolution followed by BlurPool~\cite{zhang2019blurpool}:
+\noindent\textbf{Anti-aliased down-sampling.} To shrink its feature maps, the baseline uses stride-2 convolutions, which compute the output only at every second pixel and discard the rest. Which pixels are kept depends on the position of the input: if the image moves by one pixel, a different set of pixels is kept and the output can change sharply. After three such stages the network effectively samples its input on an 8-pixel grid~\cite{azulay2019small}, the same spacing as the generators' pattern. The baseline therefore learns the pattern only in the one position it occupies in the training images, and fails when the test images move it. BlurPool~\cite{zhang2019blurpool} fixes this by smoothing the feature map before discarding pixels. In stages 2--4 I replace each stride-2 convolution, and its $1\times1$ shortcut, by a stride-1 convolution followed by
 \begin{equation}
-  \mathrm{BP}(h) = \big(h * \tfrac{1}{16}[1\;2\;1]^{\top}[1\;2\;1]\big)\!\downarrow_2 .
+  \mathrm{BP}(h) = \big(h * \tfrac{1}{16}[1\;2\;1]^{\top}[1\;2\;1]\big)\!\downarrow_2 ,
 \end{equation}
-BlurPool has no parameters. NPR keeps its $2\times2$ anchoring, so full invariance must still be learnt from data.
+where $h$ is the feature map, $*$ is a convolution of each channel with a fixed $3\times3$ blur kernel, and $\downarrow_2$ keeps every second pixel in each direction. Each kept value is now a weighted average of its neighbourhood, so it also carries information from the pixels that are discarded, and a one-pixel shift of the input changes the output only slightly. BlurPool has no learnable parameters, so the parameter count is unchanged. It does not make the network fully shift-invariant on its own: the NPR input is still computed on fixed $2\times2$ blocks, so the remaining invariance has to be learnt from the augmented, randomly cropped training data.
 
 \noindent\textbf{Offline augmentation.} I store 10 augmented copies of every training image, and 20 copies for the 25\% of fakes with the least texture, which are the hardest fakes. That gives 140k copies, plus the 12k originals (\cref{fig:overview}a). Each copy is made by applying three groups of random changes in turn. Every change is applied with the probability given in parentheses.
 
