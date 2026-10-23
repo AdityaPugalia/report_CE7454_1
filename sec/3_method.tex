@@ -3,6 +3,10 @@
 
 \input{fig/overview}
 
+\subsection{Exploratory analysis}
+\label{sec:eda}
+The training classes are balanced (5,000 each), and every image is a $512^2$ JPEG at quality~95 with 4:4:4 chroma. To look for up-sampling traces, we averaged the log-magnitude Fourier spectrum of the high-pass luma (the image minus its $3\times3$ binomial blur) over 200 images per class. A pattern that repeats every $p$ pixels gives a peak at bin $512/p$, and we measure each peak by its height above the median of the surrounding $15\times15$ bins. All classes, real photographs included, have peaks on the axes at bins 64, 128 and 256 (height 0.6--0.9), which come from the $8\times8$ block grid of JPEG. Only the fakes also have diagonal peaks, where the pattern repeats in both directions at once. At the period-4 site (128,\,128) the height is $-0.07$ for real images, 0.60 for Model~A and 0.94 for Model~B. At the period-8 site (64,\,64) it is 0.00, 0.25 and 0.66. Both generators therefore leave a 2-D lattice with periods of 2, 4 and 8 pixels, consistent with repeated $2\times$ up-sampling~\cite{odena2016checkerboard,zhang2019spectrum}, and it is stronger for Model~B. So the input should expose the correlations between neighbouring pixels, and the first layers should keep full resolution.
+
 \subsection{Setting and baseline}
 \label{sec:baseline}
 
@@ -18,7 +22,7 @@
 
 \subsection{Diagnosing the test shift}
 \label{sec:diagnosis}
-We inspected the unlabelled test images. Their JPEG headers show quality~90 with 4:2:0 chroma sub-sampling, whereas all training and dev files are quality~95 with 4:4:4. Fake training images show sharp spectral peaks of their high-pass luma at periods 8, 4 and 2 pixels, \ie at bins 64, 128 and 256 of 512. The mean test spectrum shows the same peaks one bin lower (\cref{fig:diagnosis}b,d): every test image was stretched by $s \approx 512/508 = 1.008$. A stretch moves the lattice by $x(1-1/s)$, \ie by one pixel every 127~pixels and by four pixels across the image (\cref{fig:diagnosis}a). We therefore define a \emph{test simulator}: crop $508^2$, bicubic resize to $512^2$, JPEG q90 4:2:0. On held-out images it reproduces the test failure (the baseline drops from 100\% to 34\%) and the displaced peak (\cref{fig:diagnosis}c). The simulator serves \emph{only} as a validation metric. Test images are never transformed, and the constant 508 enters neither the training data nor checkpoint selection.
+We inspected the unlabelled test images. Their JPEG headers show quality~90 with 4:2:0 chroma sub-sampling, whereas all training and dev files are quality~95 with 4:4:4. The lattice peaks of the fake training images (\cref{sec:eda}) appear in the mean test spectrum one bin lower (\cref{fig:diagnosis}b,d): every test image was stretched by $s \approx 512/508 = 1.008$. A stretch moves the lattice by $x(1-1/s)$, \ie by one pixel every 127~pixels and by four pixels across the image (\cref{fig:diagnosis}a). We therefore define a \emph{test simulator}: crop $508^2$, bicubic resize to $512^2$, JPEG q90 4:2:0. On held-out images it reproduces the test failure (the baseline drops from 100\% to 34\%) and the displaced peak (\cref{fig:diagnosis}c). The simulator serves \emph{only} as a validation metric. Test images are never transformed, and the constant 508 enters neither the training data nor checkpoint selection.
 
 \begin{figure}[t]
   \centering
