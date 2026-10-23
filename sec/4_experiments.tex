@@ -1,7 +1,7 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\noindent\textbf{Protocol.} Clean accuracy is measured on the 3,000 held-out images, and dev accuracy on 900 images (\cref{sec:v4}). Test accuracy comes from the leaderboard and exists only for submitted models. Every model runs once on the unmodified $512^2$ image.
+Clean accuracy is measured on the 3,000 validation images, and dev accuracy on 900 images in the dev set. Test accuracy comes from the leaderboard and exists only for submitted models. 
 
 \begin{table}[t]
   \centering\small
@@ -20,7 +20,7 @@
 \end{table}
 
 \subsection{Main result}
-The baseline is perfect on clean and dev data but labels every test image as real (\cref{tab:main}). Our model gives up 0.3 points of clean accuracy and scores 96.1\% on dev and \textbf{96.33\%} on test. Dev predicted the test score closely.
+The baseline is perfect on clean and dev data but labels every test image as real (\cref{tab:main}). Our model gives up 0.3 points of clean accuracy and scores 96.1\% on dev and \textbf{96.33\%} on test and we ranked \textbf{41} on the leaderboard (\textbf{Top 30\%})
 
 \begin{figure}[t]
   \centering
@@ -31,21 +31,21 @@ The baseline is perfect on clean and dev data but labels every test image as rea
 
 \subsection{What does our model read differently?}
 \Cref{fig:probes} perturbs the held-out images without retraining.
-\emph{Grid phase.} The baseline drops to chance for every shift that is not a multiple of 8 and for flips and rotations. These move or mirror the grid without removing it, which confirms the diagnosis. Our model is unaffected (99.7\%).
-\emph{Scale.} A $\pm10\%$ rescale is fatal for the baseline (33\%) and costs our model 8--12 points, although such factors occur in training. Halving the resolution, outside the training range, leaves our model at 80.9\%.
-\emph{Compression and noise.} JPEG q50 costs our model 2 points (baseline: 53), and Gaussian noise with $\sigma{=}5$ costs it 3.5 points (baseline: 36). The one cost of robustness is blur: $\sigma{=}1$ costs our model 2.3 points and the baseline 0.1.
+The baseline drops to chance for every shift in the grid phase that is not a multiple of 8 and for flips and rotations. These move or mirror the grid without removing it, which confirms the diagnosis. Our model is unaffected (99.7\%).
+\emph{Scale.} A $\pm10\%$ rescale is fatal for the baseline (33\%) and costs our model 8--12 points. Halving the resolution, outside the training range, leaves our model at 80.9\%.
+\emph{Compression and noise.} JPEG q50 costs our model 2 points (baseline: 53), and Gaussian noise with $\sigma{=}5$ costs it 3.5 points (baseline: 36). The one cost of robustness is blur: $\sigma{=}1$ costs our model 2.3 points and the baseline only 0.1.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig/curves_v4.pdf}
-  \caption{\textbf{Training of our model.} Training accuracy on augmented crops and held-out accuracy under the harsh augmentation (used for selection).}
+  \caption{\textbf{Training of our model.} Training accuracy on augmented crops and validation accuracy under the harsh augmentation (used for selection).}
   \label{fig:curves}
 \end{figure}
 
 \subsection{Ablations and training behaviour}
 \noindent\textbf{Crop size and class rebalancing.} A variant trained with $128^2$ crops and 20 copies of the smoothest 25\% of real images ties our model (dev 96.0\%). Its best-dev checkpoint reaches 97.3\% (epoch 20), but on 900 dev images a 1-point difference is within noise, so we select on harsh validation rather than dev.
 
-\noindent\textbf{Invariance is slow to learn.} The baseline passes 99.9\% after two epochs of 12k images. Our model needs 21 epochs of 152k crops to pass 98\% on harsh validation (\cref{fig:curves}): invariance must be learnt from many shifted and rescaled examples. The held-out curves track training accuracy, so 30 epochs do not overfit.
+\noindent\textbf{Invariance is slow to learn.} The baseline passes 99.9\% after two epochs of 12k images. Our model needs 21 epochs of 152k crops to pass 98\% on harsh validation (\cref{fig:curves}),thus, invariance must be learnt from many shifted and rescaled examples. 
 
 \subsection{Error analysis}
 Almost all of our model's dev errors are real images called fake, and Models~A and~B are never confused with each other. Real recall rises with texture, from 84\% for the smoothest quarter of real images to 92--93\% for the two most textured, which suggests our model partly relies on the scene statistics of the training reals. The errors are therefore real versus fake, not A versus B.

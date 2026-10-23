@@ -46,11 +46,11 @@
   at ($(s2.south west)+(0,-1.5mm)$)
   {\textbf{Down-sampling} (first block of stages 2--4, main and shortcut path): conv $3{\times}3$ \emph{stride 1} $\to$ BlurPool $\frac{1}{16}[1\,2\,1]^{\!\top}[1\,2\,1]$, keep every 2nd pixel. Features change smoothly under sub-pixel shifts.};
 \node[font=\scriptsize, align=left, text=black!75, anchor=north west] at ($(npr.south west)+(0,-1mm)$)
-  {train: $H{=}256$ crops; test: $H{=}512$, the image\\as given, one forward pass, no TTA};
+  {train: $H{=}256$ crops; test: $H{=}512$, the image\\as given};
 \end{scope}
 \end{tikzpicture}
 \vspace{-1mm}
-\caption{\textbf{Overview.} (a) Each training image is turned into 10 (or 20) stored augmented copies covering a broad range of photometric, rescaling and compression changes; training draws a random $256^2$ crop. (b) The fully convolutional network reads the RGB image and its neighbouring-pixel residual at full resolution and down-samples only through blurred strides, so it can be trained on crops.}
+\caption{\textbf{Training Overview.} (a) Each training image is turned into 10 (or 20) stored augmented copies covering a broad range of photometric, rescaling and compression changes; training draws a random $256^2$ crop. (b) The fully convolutional network reads the RGB image and its neighbouring-pixel residual at full resolution and down-samples only through blurred strides, so it can be trained on crops.}
 \label{fig:overview}
 \vspace{-2mm}
 \end{figure*}
