@@ -42,12 +42,16 @@ To make the baseline ResNet model more robust to different distributions and tra
 \end{equation}
 BlurPool has no parameters. NPR keeps its $2\times2$ anchoring, so full invariance must still be learnt from data.
 
-\noindent\textbf{Offline augmentation.} We store 10 augmented copies of every training image, and 20 copies for the 25\% of fakes with the least texture, which are the hardest fakes. That gives 140k copies, plus the 12k originals (\cref{fig:overview}a). Each copy passes through a random chain: \newline
-(A)~brightness and contrast $\times$[0.8,\,1.2] ($p{=}.5$), saturation $\times$[0.5,\,1.3] (.5), hue $\pm$0.03 (.2), gamma [0.8,\,1.25] (.3), greyscale (.05), and blurring of 1--2 rectangles covering 10--40\% of the image ($\sigma$ 2--5, .2), which teaches the network to rely on whatever texture remains;
-(B)~rescaling by a factor in [0.9,\,1.1] with one of five resamplers (.8), a horizontal flip (.5) and a random multiple of $90^\circ$;
-(C)~Gaussian blur $\sigma\in$[0.3,\,0.8] (.1), noise $\sigma\in$[1,\,3] (.1), and JPEG q60--100 with random 4:4:4/4:2:2/4:2:0 sub-sampling (.8, re-encoded twice in 20\% of cases).
+\noindent\textbf{Offline augmentation.} We store 10 augmented copies of every training image, and 20 copies for the 25\% of fakes with the least texture, which are the hardest fakes. That gives 140k copies, plus the 12k originals (\cref{fig:overview}a). Each copy is made by applying three groups of random changes in turn. Every change is applied with the probability given in parentheses.
+
+\noindent\emph{(A) Colour.} Brightness and contrast are scaled by 0.8--1.2 (50\%) and saturation by 0.5--1.3 (50\%). The hue is shifted slightly (20\%), a gamma curve is applied (30\%), or the image is turned grey (5\%). One or two rectangles covering 10--40\% of the image are blurred (20\%), so the network learns to use whatever texture remains.
+
+\noindent\emph{(B) Geometry.} The image is resized by a factor between 0.9 and 1.1 with one of five interpolation methods (80\%), flipped horizontally (50\%), and rotated by a random multiple of $90^\circ$.
+
+\noindent\emph{(C) Quality.} A light Gaussian blur ($\sigma$ 0.3--0.8, 10\%) or Gaussian noise ($\sigma$ 1--3, 10\%) is added. The image is then re-saved as a JPEG of quality 60--100 with a random chroma sub-sampling (80\%), and 20\% of these are compressed twice.
+
 The ranges were chosen after inspecting the unlabelled test images, and are deliberately broad: they cover a wide family of rescaling and compression rather than reproduce any one setting. Storing the copies (18\,GB) keeps JPEG and resampling out of the training loop and makes every sample reproducible.
 
-\noindent\textbf{Crop training, full-image testing.} Training draws one random $256^2$ crop per stored image. Crops cover all lattice phases and carry less scene content. The network is trained for 30 epochs with AdamW (lr $2\cdot10^{-3}$, weight decay $10^{-2}$, one epoch of linear warm-up, then cosine decay), a batch of 256 on 8 GPUs, and mixed precision. One epoch over 152k crops takes about 135\,s.
+\noindent\textbf{Crop training, full-image testing.} Training draws one random $256^2$ crop per stored image. Crops cover all grid positions and carry less scene content. The network is trained for 30 epochs with AdamW (lr $2\cdot10^{-3}$, weight decay $10^{-2}$, one epoch of linear warm-up, then cosine decay), a batch of 256 on 8 GPUs, and mixed precision. One epoch over 152k crops takes about 135\,s.
 
 \noindent\textbf{Validation and selection.} On the 3,000 held-out images, which have no stored copies, we track two numbers: \emph{clean} accuracy and \emph{harsh} accuracy (the training augmentation with a fixed seed, centre $448^2$ crop). The checkpoint is selected on harsh accuracy. Dev is an independent check only.

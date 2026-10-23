@@ -12,7 +12,7 @@
     \midrule
     Baseline (no aug.)          & 512 & \textbf{100} & \textbf{100} & 33.3$^\dagger$ & 1500 \\
     Ours + $128^2$ crops        & 128 & 99.9 & 96.0 & -- & 551 \\
-    \textbf{Ours (submitted)}   & 256 & 99.7 & 96.1 & \textbf{95.3} & 536 \\
+    \textbf{Ours (submitted)}   & 256 & 99.7 & 96.1 & \textbf{96.33} & 536 \\
     \bottomrule
   \end{tabular}
   \caption{\textbf{Main results} (accuracy, \%). \emph{\#real}: test images predicted real (500 expected). $^\dagger$All 1,500 test images predicted real, which scores $1/3$ on the balanced test set.}
@@ -20,7 +20,7 @@
 \end{table}
 
 \subsection{Main result}
-The baseline is perfect on clean and dev data but labels every test image as real (\cref{tab:main}). Our model gives up 0.3 points of clean accuracy and scores 96.1\% on dev and \textbf{96.33\%} (1,429/1,500) on test. Dev predicted the test score closely.
+The baseline is perfect on clean and dev data but labels every test image as real (\cref{tab:main}). Our model gives up 0.3 points of clean accuracy and scores 96.1\% on dev and \textbf{96.33\%} on test. Dev predicted the test score closely.
 
 \begin{figure}[t]
   \centering
@@ -31,7 +31,7 @@ The baseline is perfect on clean and dev data but labels every test image as rea
 
 \subsection{What does our model read differently?}
 \Cref{fig:probes} perturbs the held-out images without retraining.
-\emph{Lattice phase.} The baseline drops to chance for every shift that is not a multiple of 8 and for flips and rotations. These move or mirror the lattice without removing it, which confirms the diagnosis. Our model is unaffected (99.7\%).
+\emph{Grid phase.} The baseline drops to chance for every shift that is not a multiple of 8 and for flips and rotations. These move or mirror the grid without removing it, which confirms the diagnosis. Our model is unaffected (99.7\%).
 \emph{Scale.} A $\pm10\%$ rescale is fatal for the baseline (33\%) and costs our model 8--12 points, although such factors occur in training. Halving the resolution, outside the training range, leaves our model at 80.9\%.
 \emph{Compression and noise.} JPEG q50 costs our model 2 points (baseline: 53), and Gaussian noise with $\sigma{=}5$ costs it 3.5 points (baseline: 36). The one cost of robustness is blur: $\sigma{=}1$ costs our model 2.3 points and the baseline 0.1.
 
